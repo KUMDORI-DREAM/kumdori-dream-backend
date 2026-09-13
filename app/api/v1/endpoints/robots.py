@@ -1,0 +1,55 @@
+from datetime import UTC, datetime
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.session import get_db
+from app.models.robot import Robot, RobotTelemetry
+from app.schemas.robot import HeartbeatIn, RobotOut
+
+router = APIRouter(prefix="/robots", tags=["robots"])
+
+
+@router.post("/{robot_id}/heartbeat", response_model=RobotOut)
+async def send_heartbeat(
+    robot_id: str, payload: HeartbeatIn, db: AsyncSession = Depends(get_db)
+) -> Robot:
+    now = datetime.now(UTC)
+
+    robot = await db.get(Robot, robot_id)
+    if robot is None:
+        robot = Robot(id=robot_id, status=payload.status, battery=payload.battery, last_seen=now)
+        db.add(robot)
+    else:
+        robot.status = payload.status
+        robot.battery = payload.battery
+        robot.last_seen = now
+
+    db.add(
+        RobotTelemetry(
+            robot_id=robot_id,
+            x=payload.x,
+            y=payload.y,
+            battery=payload.battery,
+            status=payload.status,
+        )
+    )
+
+    await db.commit()
+    await db.refresh(robot)
+    return robot
+
+
+@router.get("", response_model=list[RobotOut])
+async def list_robots(db: AsyncSession = Depends(get_db)) -> list[Robot]:
+    result = await db.execute(select(Robot).order_by(Robot.id))
+    return list(result.scalars().all())
+
+
+@router.get("/{robot_id}", response_model=RobotOut)
+async def get_robot(robot_id: str, db: AsyncSession = Depends(get_db)) -> Robot:
+    robot = await db.get(Robot, robot_id)
+    if robot is None:
+        raise HTTPException(status_code=404, detail="robot not found")
+    return robot
