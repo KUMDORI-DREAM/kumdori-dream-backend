@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docs (내부 기획/작업 문서 - 저장소에 공개하지 않음)
+docs/
+
+# Secrets
+*.pem
+*.key
+credentials.json
+

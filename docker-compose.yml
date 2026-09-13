@@ -1,0 +1,61 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-kumdori}:${POSTGRES_PASSWORD:-kumdori}@postgres:5432/${POSTGRES_DB:-kumdori_dream}
+    volumes:
+      - ./app:/app/app
+      - ./alembic:/app/alembic
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kumdori}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kumdori}
+      POSTGRES_DB: ${POSTGRES_DB:-kumdori_dream}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kumdori}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  chromadb:
+    image: chromadb/chroma:latest
+    profiles: ["stage2", "full"]
+    ports:
+      - "${CHROMADB_PORT:-8001}:8000"
+    volumes:
+      - chromadb-data:/chroma/chroma
+
+  prometheus:
+    image: prom/prometheus:latest
+    profiles: ["stage3", "full"]
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    profiles: ["stage3", "full"]
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  postgres-data:
+  chromadb-data:
+  grafana-data:
