@@ -1,6 +1,10 @@
 import math
+import os
 
 from controller import Robot
+from edge_agent import EdgeAgent
+
+ROBOT_ID = os.environ.get("KUMDORI_ROBOT_ID", "patrol-robot-01")
 
 WAYPOINTS = [
     (2.0, 2.0),
@@ -41,6 +45,7 @@ def heading_from_compass(north: tuple[float, float, float]) -> float:
 
 
 waypoint_index = 0
+edge_agent = EdgeAgent(ROBOT_ID)
 
 while robot.step(time_step) != -1:
     position = gps.getValues()
@@ -49,13 +54,15 @@ while robot.step(time_step) != -1:
     x, y = position[0], position[1]
     heading = heading_from_compass(north)
 
+    edge_agent.send_heartbeat(robot.getTime(), x, y, "PATROLLING")
+
     target_x, target_y = WAYPOINTS[waypoint_index]
     dx, dy = target_x - x, target_y - y
     distance = math.hypot(dx, dy)
 
     if distance < ARRIVAL_RADIUS:
         waypoint_index = (waypoint_index + 1) % len(WAYPOINTS)
-        print(f"[patrol-robot-01] reached waypoint {waypoint_index}, position=({x:.2f}, {y:.2f})")
+        print(f"[{ROBOT_ID}] reached waypoint {waypoint_index}, position=({x:.2f}, {y:.2f})")
         continue
 
     target_angle = math.atan2(dy, dx)
