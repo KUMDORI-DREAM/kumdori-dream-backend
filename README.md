@@ -1,32 +1,18 @@
 # kumdori-dream-backend
 
-Webots 기반 **AI 물류창고 안전 모니터링 및 동적 경로 최적화 시스템**의 FastAPI 백엔드입니다.
-프로젝트 배경 및 전체 설계는 [docs/](docs/) 참고.
+Webots 기반 Warehouse AI 로봇 관제 백엔드입니다.
 
-## 스택
+## 현재 구현 범위
 
-* Python 3.12, [uv](https://docs.astral.sh/uv/) (패키지/가상환경 관리)
-* FastAPI, Uvicorn, SQLAlchemy (async), Alembic, PostgreSQL
-* WebSocket
-* Docker / docker-compose
-* 향후 연동: ChromaDB, LangGraph, Prometheus, Grafana
+- FastAPI, SQLAlchemy async, PostgreSQL, Alembic
+- 로봇 heartbeat 및 telemetry 저장
+- 로봇 상태: `IDLE`, `MOVING`, `REPLANNING`, `WAITING`, `ALERT`, `OFFLINE`
+- 안전 이벤트: `PERSON_IN_PATH`, `OBJECT_ON_AISLE`, `AISLE_BLOCKED`, `FALL`
+- Warehouse Graph node/edge 관리 API
+- Graph 기반 A* route 계획 API
+- Webots warehouse 로봇 컨트롤러 및 EdgeAgent heartbeat
 
-## 주요 역할
-
-백엔드는 Webots 로봇 및 Edge Agent와 연동하여 다음 기능을 담당합니다.
-
-* 로봇 Heartbeat 및 Telemetry 수집
-* 로봇 상태 및 위치 관리
-* Warehouse Graph 및 경로 정보 관리
-* A* 기반 경로 계획 결과 관리
-* 작업자·장애물·낙상 등 Detection Event 수집
-* 위험 구역 및 Risk Cost 관리
-* 위험 이벤트 발생 시 Route Replan 처리
-* WebSocket 기반 실시간 상태 및 이벤트 전달
-* LangGraph 기반 AI 분석 결과 관리
-* 원격 조종 Control Lease 관리
-
-## 로컬 개발 (Docker 없이)
+## 실행
 
 ```bash
 uv sync
@@ -34,93 +20,57 @@ cp .env.example .env
 uv run uvicorn app.main:app --reload
 ```
 
-`http://localhost:8000/api/v1/health` 로 확인합니다.
+API 문서는 `http://localhost:8000/docs`에서 확인할 수 있습니다.
 
-이 경우 `DATABASE_URL`이 로컬에서 접근 가능한 PostgreSQL을 가리켜야 합니다.
-
-## Docker Compose
+Docker를 사용하는 경우:
 
 ```bash
 cp .env.example .env
 docker compose up -d --build
 ```
 
-기본으로는 `backend`, `postgres`만 기동됩니다.
+## 주요 API
 
-추가 인프라는 profile로 분리합니다.
-
-```bash
-docker compose --profile stage2 up -d   # + ChromaDB
-docker compose --profile stage3 up -d   # + Prometheus, Grafana
-docker compose --profile full up -d     # 전체
-```
-
-## 마이그레이션 (Alembic)
-
-```bash
-uv run alembic revision --autogenerate -m "message"
-uv run alembic upgrade head
-```
+- `GET /api/v1/health`
+- `POST /api/v1/robots/{robot_id}/heartbeat`
+- `GET /api/v1/robots`
+- `GET /api/v1/robots/{robot_id}`
+- `POST /api/v1/robots/{robot_id}/safety-events`
+- `GET /api/v1/robots/{robot_id}/safety-events`
+- `POST /api/v1/warehouse/nodes`
+- `POST /api/v1/warehouse/edges`
+- `GET /api/v1/warehouse/nodes`
+- `GET /api/v1/warehouse/edges`
+- `POST /api/v1/routes/plan`
 
 ## 프로젝트 구조
 
 ```text
 app/
-  main.py              # FastAPI entrypoint
-  core/
-    config.py          # 환경설정 (pydantic-settings)
-
-  db/                  # SQLAlchemy Base, async session
-
-  api/v1/              # REST / WebSocket API 라우터
-
-  models/              # ORM 모델
-                       # Robot
-                       # RobotTelemetry
-                       # WarehouseNode
-                       # WarehouseEdge
-                       # RoutePlan
-                       # DetectionEvent
-                       # AIAnalysis
-                       # ControlLease
-
-  schemas/             # Pydantic 요청/응답 스키마
-
-  services/            # 비즈니스 로직
-                       # Robot 상태 관리
-                       # Detection Event 처리
-                       # Route Planning / Replan
-                       # Risk Cost 관리
-
-  routing/             # Warehouse Graph 및 A* 경로 탐색
-
-  websocket/           # Robot / Dashboard 연결 관리
-
-  ai/                  # LangGraph / ChromaDB 연동
-
-alembic/               # DB 마이그레이션
-
-docker/                # Prometheus 등 인프라 설정
-
-tests/                 # API / Routing / Event 자동화 테스트
+  main.py
+  api/v1/                 # REST API endpoints
+  core/                   # 환경 설정
+  db/                     # SQLAlchemy Base 및 async session
+  models/                 # Robot, SafetyEvent, WarehouseNode, WarehouseEdge
+  schemas/                # API request/response schemas
+  route_planner.py        # A* route planner
+alembic/                  # DB migrations
+docker/                   # Prometheus 설정
+webots/
+  worlds/                 # warehouse_world.wbt
+  controllers/            # warehouse robot controller
 ```
 
-## 주요 처리 흐름
+## Webots 환경 변수
 
 ```text
-Webots Robot / Edge Agent
-          ↓
-Heartbeat / Telemetry / Detection Event
-          ↓
-       FastAPI
-          ↓
- ┌────────┼───────────┐
- ▼        ▼           ▼
-DB    WebSocket   Routing Service
-                     ↓
-                 Risk Update
-                     ↓
-                 Route Replan
+KUMDORI_BACKEND_URL           기본값: http://localhost:8000
+KUMDORI_ROBOT_ID              기본값: warehouse-robot-01
+KUMDORI_HEARTBEAT_INTERVAL_S  기본값: 1.0
 ```
 
-위험 상황이 감지되면 이벤트를 단순 저장하는 데서 끝내지 않고, 해당 구역의 위험도를 경로 비용에 반영해 필요 시 로봇의 이동 경로를 다시 계산하는 구조를 목표로 합니다.
+## 마이그레이션
+
+```bash
+uv run alembic upgrade head
+```
