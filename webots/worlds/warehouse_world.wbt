@@ -214,9 +214,9 @@ DEF PATROL_ROBOT Robot {
       }
     }
   ]
-  name "patrol-robot-01"
+  name "warehouse-robot-01"
   boundingObject USE BODY
   physics Physics {
   }
-  controller "patrol_robot_controller"
+  controller "warehouse_robot_controller"
 }

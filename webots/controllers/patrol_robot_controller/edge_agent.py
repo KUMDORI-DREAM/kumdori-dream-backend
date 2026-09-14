@@ -30,13 +30,21 @@ class EdgeAgent:
         self._last_sent_s = float("-inf")
 
     def send_heartbeat(
-        self, now_s: float, x: float, y: float, status: str, battery: float | None = None
+        self,
+        now_s: float,
+        x: float,
+        y: float,
+        status: str,
+        battery: float | None = None,
+        current_node: str | None = None,
+        target_node: str | None = None,
     ) -> None:
         if now_s - self._last_sent_s < self.interval_s:
             return
         self._last_sent_s = now_s
 
-        payload = {"x": x, "y": y, "status": status, "battery": battery}
+        payload = {"x": x, "y": y, "status": status, "battery": battery,
+                   "current_node": current_node, "target_node": target_node}
         thread = threading.Thread(target=self._post_heartbeat, args=(payload,), daemon=True)
         thread.start()
 

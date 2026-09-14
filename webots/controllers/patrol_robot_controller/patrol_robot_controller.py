@@ -4,7 +4,7 @@ import os
 from controller import Robot
 from edge_agent import EdgeAgent
 
-ROBOT_ID = os.environ.get("KUMDORI_ROBOT_ID", "patrol-robot-01")
+ROBOT_ID = os.environ.get("KUMDORI_ROBOT_ID", "warehouse-robot-01")
 
 WAYPOINTS = [
     (2.0, 2.0),
@@ -54,7 +54,9 @@ while robot.step(time_step) != -1:
     x, y = position[0], position[1]
     heading = heading_from_compass(north)
 
-    edge_agent.send_heartbeat(robot.getTime(), x, y, "PATROLLING")
+    edge_agent.send_heartbeat(
+        robot.getTime(), x, y, "MOVING", current_node=f"waypoint-{waypoint_index}"
+    )
 
     target_x, target_y = WAYPOINTS[waypoint_index]
     dx, dy = target_x - x, target_y - y
