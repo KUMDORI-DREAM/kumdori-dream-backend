@@ -8,10 +8,14 @@ from app.db.base import Base
 
 class RobotStatus:
     ONLINE = "ONLINE"
-    PATROLLING = "PATROLLING"
+    IDLE = "IDLE"
+    MOVING = "MOVING"
+    REPLANNING = "REPLANNING"
+    WAITING = "WAITING"
     ALERT = "ALERT"
-    MANUAL_CONTROL = "MANUAL_CONTROL"
     OFFLINE = "OFFLINE"
+
+    ALL = (ONLINE, IDLE, MOVING, REPLANNING, WAITING, ALERT, OFFLINE)
 
 
 class Robot(Base):
@@ -22,6 +26,8 @@ class Robot(Base):
         String(32), nullable=False, default=RobotStatus.OFFLINE, server_default=RobotStatus.OFFLINE
     )
     battery: Mapped[float | None] = mapped_column(Float, nullable=True)
+    current_node: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    target_node: Mapped[str | None] = mapped_column(String(64), nullable=True)
     last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -46,3 +52,26 @@ class RobotTelemetry(Base):
     )
 
     robot: Mapped[Robot] = relationship(back_populates="telemetry")
+
+
+class SafetyEventType:
+    PERSON_IN_PATH = "PERSON_IN_PATH"
+    OBJECT_ON_AISLE = "OBJECT_ON_AISLE"
+    AISLE_BLOCKED = "AISLE_BLOCKED"
+    FALL = "FALL"
+
+    ALL = (PERSON_IN_PATH, OBJECT_ON_AISLE, AISLE_BLOCKED, FALL)
+
+
+class SafetyEvent(Base):
+    __tablename__ = "safety_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    robot_id: Mapped[str] = mapped_column(ForeignKey("robots.id", ondelete="CASCADE"), index=True)
+    event_type: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, default="WARNING")
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    x: Mapped[float | None] = mapped_column(Float, nullable=True)
+    y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    resolved: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
