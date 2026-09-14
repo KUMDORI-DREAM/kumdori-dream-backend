@@ -1,15 +1,18 @@
 # kumdori-dream-backend
 
-Webots 기반 AI 자율 순찰 로봇 관제 시스템 — FastAPI 백엔드.
-프로젝트 배경 및 설계는 [docs/](docs/) 참고.
+Webots 기반 Warehouse AI 로봇 관제 백엔드입니다.
 
-## 스택
+## 현재 구현 범위
 
-- Python 3.12, [uv](https://docs.astral.sh/uv/) (패키지/가상환경 관리)
-- FastAPI, Uvicorn, SQLAlchemy (async), Alembic, PostgreSQL
-- Docker / docker-compose
+- FastAPI, SQLAlchemy async, PostgreSQL, Alembic
+- 로봇 heartbeat 및 telemetry 저장
+- 로봇 상태: `IDLE`, `MOVING`, `REPLANNING`, `WAITING`, `ALERT`, `OFFLINE`
+- 안전 이벤트: `PERSON_IN_PATH`, `OBJECT_ON_AISLE`, `AISLE_BLOCKED`, `FALL`
+- Warehouse Graph node/edge 관리 API
+- Graph 기반 A* route 계획 API
+- Webots warehouse 로봇 컨트롤러 및 EdgeAgent heartbeat
 
-## 로컬 개발 (Docker 없이)
+## 실행
 
 ```bash
 uv sync
@@ -17,42 +20,57 @@ cp .env.example .env
 uv run uvicorn app.main:app --reload
 ```
 
-`http://localhost:8000/api/v1/health` 로 확인. 이 경우 `DATABASE_URL`이 로컬에서 접근 가능한 PostgreSQL을 가리켜야 함.
+API 문서는 `http://localhost:8000/docs`에서 확인할 수 있습니다.
 
-## Docker Compose
+Docker를 사용하는 경우:
 
 ```bash
 cp .env.example .env
 docker compose up -d --build
 ```
 
-기본으로는 `backend`, `postgres`만 기동됨 (MVP 범위).
+## 주요 API
 
-추가 인프라는 profile로 분리:
-
-```bash
-docker compose --profile stage2 up -d   # + ChromaDB
-docker compose --profile stage3 up -d   # + Prometheus, Grafana
-docker compose --profile full up -d     # 전체
-```
-
-## 마이그레이션 (Alembic)
-
-```bash
-uv run alembic revision --autogenerate -m "message"
-uv run alembic upgrade head
-```
+- `GET /api/v1/health`
+- `POST /api/v1/robots/{robot_id}/heartbeat`
+- `GET /api/v1/robots`
+- `GET /api/v1/robots/{robot_id}`
+- `POST /api/v1/robots/{robot_id}/safety-events`
+- `GET /api/v1/robots/{robot_id}/safety-events`
+- `POST /api/v1/warehouse/nodes`
+- `POST /api/v1/warehouse/edges`
+- `GET /api/v1/warehouse/nodes`
+- `GET /api/v1/warehouse/edges`
+- `POST /api/v1/routes/plan`
 
 ## 프로젝트 구조
 
 ```text
 app/
-  main.py          # FastAPI entrypoint
-  core/config.py   # 환경설정 (pydantic-settings)
-  db/              # SQLAlchemy Base, async session
-  api/v1/          # API 라우터
-  models/          # ORM 모델
-  schemas/         # Pydantic 스키마
-alembic/           # DB 마이그레이션
-docker/            # 인프라 설정 (prometheus 등)
+  main.py
+  api/v1/                 # REST API endpoints
+  core/                   # 환경 설정
+  db/                     # SQLAlchemy Base 및 async session
+  models/                 # Robot, SafetyEvent, WarehouseNode, WarehouseEdge
+  schemas/                # API request/response schemas
+  route_planner.py        # A* route planner
+alembic/                  # DB migrations
+docker/                   # Prometheus 설정
+webots/
+  worlds/                 # warehouse_world.wbt
+  controllers/            # warehouse robot controller
+```
+
+## Webots 환경 변수
+
+```text
+KUMDORI_BACKEND_URL           기본값: http://localhost:8000
+KUMDORI_ROBOT_ID              기본값: warehouse-robot-01
+KUMDORI_HEARTBEAT_INTERVAL_S  기본값: 1.0
+```
+
+## 마이그레이션
+
+```bash
+uv run alembic upgrade head
 ```

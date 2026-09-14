@@ -1,0 +1,222 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+
+WorldInfo {
+  coordinateSystem "ENU"
+  basicTimeStep 32
+}
+Viewpoint {
+  orientation 0 0 1 0
+  position 0 0 12
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+RectangleArena {
+  floorSize 6 6
+  wallHeight 1
+  wallThickness 0.05
+}
+
+DEF WAYPOINT_1 Solid {
+  translation 2 2 0.15
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.8 0
+        roughness 1
+        metalness 0
+      }
+      geometry Cylinder {
+        height 0.3
+        radius 0.05
+      }
+    }
+  ]
+  name "waypoint_1"
+}
+
+DEF WAYPOINT_2 Solid {
+  translation 2 -2 0.15
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.8 0
+        roughness 1
+        metalness 0
+      }
+      geometry Cylinder {
+        height 0.3
+        radius 0.05
+      }
+    }
+  ]
+  name "waypoint_2"
+}
+
+DEF WAYPOINT_3 Solid {
+  translation -2 -2 0.15
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.8 0
+        roughness 1
+        metalness 0
+      }
+      geometry Cylinder {
+        height 0.3
+        radius 0.05
+      }
+    }
+  ]
+  name "waypoint_3"
+}
+
+DEF WAYPOINT_4 Solid {
+  translation -2 2 0.15
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.8 0
+        roughness 1
+        metalness 0
+      }
+      geometry Cylinder {
+        height 0.3
+        radius 0.05
+      }
+    }
+  ]
+  name "waypoint_4"
+}
+
+DEF PATROL_ROBOT Robot {
+  translation 0 0 0.08
+  rotation 0 0 1 0
+  children [
+    DEF BODY Shape {
+      appearance PBRAppearance {
+        baseColor 0.85 0.35 0.05
+        roughness 0.6
+        metalness 0.1
+      }
+      geometry Box {
+        size 0.4 0.24 0.12
+      }
+    }
+    GPS {
+      name "gps"
+    }
+    Compass {
+      name "compass"
+    }
+    DEF WHEEL_SHAPE Shape {
+      appearance PBRAppearance {
+        baseColor 0.1 0.1 0.1
+        roughness 1
+        metalness 0
+      }
+      geometry Cylinder {
+        height 0.04
+        radius 0.08
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor 0.15 0.14 0
+      }
+      device [
+        RotationalMotor {
+          name "front_left_motor"
+        }
+      ]
+      endPoint Solid {
+        translation 0.15 0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          USE WHEEL_SHAPE
+        ]
+        name "front_left_wheel"
+        boundingObject USE WHEEL_SHAPE
+        physics Physics {
+        }
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor 0.15 -0.14 0
+      }
+      device [
+        RotationalMotor {
+          name "front_right_motor"
+        }
+      ]
+      endPoint Solid {
+        translation 0.15 -0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          USE WHEEL_SHAPE
+        ]
+        name "front_right_wheel"
+        boundingObject USE WHEEL_SHAPE
+        physics Physics {
+        }
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor -0.15 0.14 0
+      }
+      device [
+        RotationalMotor {
+          name "rear_left_motor"
+        }
+      ]
+      endPoint Solid {
+        translation -0.15 0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          USE WHEEL_SHAPE
+        ]
+        name "rear_left_wheel"
+        boundingObject USE WHEEL_SHAPE
+        physics Physics {
+        }
+      }
+    }
+    HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor -0.15 -0.14 0
+      }
+      device [
+        RotationalMotor {
+          name "rear_right_motor"
+        }
+      ]
+      endPoint Solid {
+        translation -0.15 -0.14 0
+        rotation 1 0 0 1.5708
+        children [
+          USE WHEEL_SHAPE
+        ]
+        name "rear_right_wheel"
+        boundingObject USE WHEEL_SHAPE
+        physics Physics {
+        }
+      }
+    }
+  ]
+  name "warehouse-robot-01"
+  boundingObject USE BODY
+  physics Physics {
+  }
+  controller "warehouse_robot_controller"
+}
