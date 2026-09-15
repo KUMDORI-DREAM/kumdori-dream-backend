@@ -39,15 +39,15 @@ def a_star(start, goal):
     return []
 ARRIVAL_RADIUS = 0.25
 BASE_SPEED = 5.2
-TURN_GAIN = 3.0
+TURN_GAIN = 2.0
 MAX_MOTOR_SPEED = 6.0
 # With the front-facing sensor, no hit reports 0 and a nearby obstacle reports
 # a positive value. Use a small threshold to stop before the test obstacle.
 OBSTACLE_THRESHOLD = 50.0
-AVOIDANCE_TURN_S = 1.2
+AVOIDANCE_TURN_S = 1.6
 AVOIDANCE_FORWARD_S = 0.8
-BOUNDARY_LIMIT = 2.4
-BOUNDARY_RETURN = 1.8
+BOUNDARY_LIMIT = 3.4
+BOUNDARY_RETURN = 2.5
 
 robot = Robot()
 time_step = int(robot.getBasicTimeStep())
@@ -122,7 +122,6 @@ while robot.step(time_step) != -1:
         continue
 
     if sensor_value >= OBSTACLE_THRESHOLD:
-        avoidance_direction *= -1.0
         avoidance_until = now + AVOIDANCE_TURN_S
         avoidance_forward_until = avoidance_until + AVOIDANCE_FORWARD_S
         for motor in left_motors + right_motors:
@@ -143,8 +142,8 @@ while robot.step(time_step) != -1:
     error = wrap(math.atan2(target_y - y, target_x - x) - heading)
     turn = max(-1.0, min(1.0, TURN_GAIN * error))
     forward = BASE_SPEED * max(0.0, 1.0 - abs(error) / (math.pi / 2))
-    left = max(-MAX_MOTOR_SPEED, min(MAX_MOTOR_SPEED, forward - turn * TURN_GAIN))
-    right = max(-MAX_MOTOR_SPEED, min(MAX_MOTOR_SPEED, forward + turn * TURN_GAIN))
+    left = max(-MAX_MOTOR_SPEED, min(MAX_MOTOR_SPEED, forward - turn))
+    right = max(-MAX_MOTOR_SPEED, min(MAX_MOTOR_SPEED, forward + turn))
     for motor in left_motors:
         motor.setVelocity(left)
     for motor in right_motors:
