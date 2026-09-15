@@ -38,25 +38,21 @@ Solid {
   translation 0 4 0.5
   children [ Shape { geometry Box { size 8 0.1 1 } } ]
   name "north_wall"
-  boundingObject Box { size 8 0.1 1 }
 }
 Solid {
   translation 0 -4 0.5
   children [ Shape { geometry Box { size 8 0.1 1 } } ]
   name "south_wall"
-  boundingObject Box { size 8 0.1 1 }
 }
 Solid {
   translation 4 0 0.5
   children [ Shape { geometry Box { size 0.1 8 1 } } ]
   name "east_wall"
-  boundingObject Box { size 0.1 8 1 }
 }
 Solid {
   translation -4 0 0.5
   children [ Shape { geometry Box { size 0.1 8 1 } } ]
   name "west_wall"
-  boundingObject Box { size 0.1 8 1 }
 }
 
 DEF WAYPOINT_1 Solid {
