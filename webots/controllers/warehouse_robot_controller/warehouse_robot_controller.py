@@ -38,14 +38,14 @@ def a_star(start, goal):
                 open_nodes.append((new_cost + math.hypot(nx - gx, ny - gy), neighbor))
     return []
 ARRIVAL_RADIUS = 0.25
-BASE_SPEED = 4.0
+BASE_SPEED = 5.2
 TURN_GAIN = 3.0
 MAX_MOTOR_SPEED = 6.0
 # With the front-facing sensor, no hit reports 0 and a nearby obstacle reports
 # a positive value. Use a small threshold to stop before the test obstacle.
 OBSTACLE_THRESHOLD = 50.0
 AVOIDANCE_TURN_S = 1.2
-AVOIDANCE_FORWARD_S = 1.5
+AVOIDANCE_FORWARD_S = 0.8
 
 robot = Robot()
 time_step = int(robot.getBasicTimeStep())

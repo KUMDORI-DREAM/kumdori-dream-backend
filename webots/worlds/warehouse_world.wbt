@@ -25,38 +25,38 @@ Solid {
         metalness 0
       }
       geometry Box {
-        size 6 6 0.1
+        size 8 8 0.1
       }
     }
   ]
   name "warehouse_floor"
   boundingObject Box {
-    size 6 6 0.1
+    size 8 8 0.1
   }
 }
 Solid {
-  translation 0 3 0.5
-  children [ Shape { geometry Box { size 6 0.1 1 } } ]
+  translation 0 4 0.5
+  children [ Shape { geometry Box { size 8 0.1 1 } } ]
   name "north_wall"
-  boundingObject Box { size 6 0.1 1 }
+  boundingObject Box { size 8 0.1 1 }
 }
 Solid {
-  translation 0 -3 0.5
-  children [ Shape { geometry Box { size 6 0.1 1 } } ]
+  translation 0 -4 0.5
+  children [ Shape { geometry Box { size 8 0.1 1 } } ]
   name "south_wall"
-  boundingObject Box { size 6 0.1 1 }
+  boundingObject Box { size 8 0.1 1 }
 }
 Solid {
-  translation 3 0 0.5
-  children [ Shape { geometry Box { size 0.1 6 1 } } ]
+  translation 4 0 0.5
+  children [ Shape { geometry Box { size 0.1 8 1 } } ]
   name "east_wall"
-  boundingObject Box { size 0.1 6 1 }
+  boundingObject Box { size 0.1 8 1 }
 }
 Solid {
-  translation -3 0 0.5
-  children [ Shape { geometry Box { size 0.1 6 1 } } ]
+  translation -4 0 0.5
+  children [ Shape { geometry Box { size 0.1 8 1 } } ]
   name "west_wall"
-  boundingObject Box { size 0.1 6 1 }
+  boundingObject Box { size 0.1 8 1 }
 }
 
 DEF WAYPOINT_1 Solid {
@@ -176,7 +176,6 @@ DEF PATROL_ROBOT Robot {
     DistanceSensor {
       name "front_distance_sensor"
       translation 0.5 0 0.12
-      rotation 0 1 0 1.5708
       lookupTable [
         0 1000 0
         2 0 0
