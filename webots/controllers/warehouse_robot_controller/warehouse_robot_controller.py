@@ -45,6 +45,7 @@ MAX_MOTOR_SPEED = 6.0
 # a positive value. Use a small threshold to stop before the test obstacle.
 OBSTACLE_THRESHOLD = 50.0
 AVOIDANCE_TURN_S = 1.2
+AVOIDANCE_FORWARD_S = 1.5
 
 robot = Robot()
 time_step = int(robot.getBasicTimeStep())
@@ -65,6 +66,7 @@ agent = EdgeAgent(ROBOT_ID)
 route = a_star("A1", "B2")
 route_index = 0
 avoidance_until = 0.0
+avoidance_forward_until = 0.0
 avoidance_direction = 1.0
 last_debug_s = -1.0
 
@@ -96,9 +98,20 @@ while robot.step(time_step) != -1:
         agent.send_heartbeat(now, x, y, "WAITING")
         continue
 
+    if now < avoidance_forward_until:
+        left = BASE_SPEED
+        right = BASE_SPEED
+        for motor in left_motors:
+            motor.setVelocity(left)
+        for motor in right_motors:
+            motor.setVelocity(right)
+        agent.send_heartbeat(now, x, y, "WAITING")
+        continue
+
     if sensor_value >= OBSTACLE_THRESHOLD:
         avoidance_direction *= -1.0
         avoidance_until = now + AVOIDANCE_TURN_S
+        avoidance_forward_until = avoidance_until + AVOIDANCE_FORWARD_S
         for motor in left_motors + right_motors:
             motor.setVelocity(0.0)
         agent.send_heartbeat(now, x, y, "WAITING")
