@@ -41,29 +41,69 @@ ARRIVAL_RADIUS = 0.25
 BASE_SPEED = 4.0
 TURN_GAIN = 3.0
 MAX_MOTOR_SPEED = 6.0
+# The Webots sensor reports a high idle value in this world. With this
+# lookup table, a nearby obstacle produces a lower reading.
+OBSTACLE_THRESHOLD = 850.0
+AVOIDANCE_TURN_S = 1.2
 
 robot = Robot()
 time_step = int(robot.getBasicTimeStep())
+print(f"[DEBUG] controller initialized, timestep={time_step}", flush=True)
 gps = robot.getDevice("gps")
 compass = robot.getDevice("compass")
+front_sensor = robot.getDevice("front_distance_sensor")
 gps.enable(time_step)
 compass.enable(time_step)
+front_sensor.enable(time_step)
 left_motors = [robot.getDevice("front_left_motor"), robot.getDevice("rear_left_motor")]
 right_motors = [robot.getDevice("front_right_motor"), robot.getDevice("rear_right_motor")]
 for motor in left_motors + right_motors:
     motor.setPosition(float("inf"))
+print("[DEBUG] devices initialized, entering simulation loop", flush=True)
 
 agent = EdgeAgent(ROBOT_ID)
 route = a_star("A1", "B2")
 route_index = 0
+avoidance_until = 0.0
+avoidance_direction = 1.0
+last_debug_s = -1.0
 
 def wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
 
 while robot.step(time_step) != -1:
+    now = robot.getTime()
     x, y = gps.getValues()[:2]
     north = compass.getValues()
     heading = wrap(math.pi / 2 - math.atan2(north[1], north[0]))
+    sensor_value = front_sensor.getValue()
+    if now - last_debug_s >= 1.0:
+        print(
+            f"[DEBUG] loop tick t={now:.2f}, position=({x:.2f}, {y:.2f}), "
+            f"sensor={sensor_value:.1f}",
+            flush=True,
+        )
+        last_debug_s = now
+    if now < avoidance_until:
+        left = -MAX_MOTOR_SPEED * avoidance_direction
+        right = MAX_MOTOR_SPEED * avoidance_direction
+        for motor in left_motors:
+            motor.setVelocity(left)
+        for motor in right_motors:
+            motor.setVelocity(right)
+        if now - last_debug_s < time_step / 1000:
+            print(f"[DEBUG] avoidance motor command left={left:.2f}, right={right:.2f}", flush=True)
+        agent.send_heartbeat(now, x, y, "WAITING")
+        continue
+
+    if sensor_value <= OBSTACLE_THRESHOLD:
+        avoidance_direction *= -1.0
+        avoidance_until = now + AVOIDANCE_TURN_S
+        for motor in left_motors + right_motors:
+            motor.setVelocity(0.0)
+        agent.send_heartbeat(now, x, y, "WAITING")
+        continue
+
     target_node = route[route_index]
     target_x, target_y = NODE_COORDINATES[target_node]
     if math.hypot(target_x - x, target_y - y) < ARRIVAL_RADIUS:
@@ -78,7 +118,9 @@ while robot.step(time_step) != -1:
         motor.setVelocity(left)
     for motor in right_motors:
         motor.setVelocity(right)
+    if now - last_debug_s < time_step / 1000:
+        print(f"[DEBUG] drive motor command left={left:.2f}, right={right:.2f}", flush=True)
     agent.send_heartbeat(
-        robot.getTime(), x, y, "MOVING", current_node=target_node,
+        now, x, y, "MOVING", current_node=target_node,
         target_node=route[(route_index + 1) % len(route)],
     )

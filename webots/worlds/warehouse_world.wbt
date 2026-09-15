@@ -1,8 +1,5 @@
 #VRML_SIM R2025a utf8
 
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
-EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
 
 WorldInfo {
   coordinateSystem "ENU"
@@ -12,14 +9,54 @@ Viewpoint {
   orientation 0 0 1 0
   position 0 0 12
 }
-TexturedBackground {
+Background {
+  skyColor [ 0.15 0.2 0.3 ]
 }
-TexturedBackgroundLight {
+DirectionalLight {
+  direction -1 -1 -2
 }
-RectangleArena {
-  floorSize 6 6
-  wallHeight 1
-  wallThickness 0.05
+Solid {
+  translation 0 0 -0.05
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.65 0.65 0.65
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 6 6 0.1
+      }
+    }
+  ]
+  name "warehouse_floor"
+  boundingObject Box {
+    size 6 6 0.1
+  }
+}
+Solid {
+  translation 0 3 0.5
+  children [ Shape { geometry Box { size 6 0.1 1 } } ]
+  name "north_wall"
+  boundingObject Box { size 6 0.1 1 }
+}
+Solid {
+  translation 0 -3 0.5
+  children [ Shape { geometry Box { size 6 0.1 1 } } ]
+  name "south_wall"
+  boundingObject Box { size 6 0.1 1 }
+}
+Solid {
+  translation 3 0 0.5
+  children [ Shape { geometry Box { size 0.1 6 1 } } ]
+  name "east_wall"
+  boundingObject Box { size 0.1 6 1 }
+}
+Solid {
+  translation -3 0 0.5
+  children [ Shape { geometry Box { size 0.1 6 1 } } ]
+  name "west_wall"
+  boundingObject Box { size 0.1 6 1 }
 }
 
 DEF WAYPOINT_1 Solid {
@@ -94,6 +131,28 @@ DEF WAYPOINT_4 Solid {
   name "waypoint_4"
 }
 
+DEF TEST_OBSTACLE Solid {
+  translation 1 1 0.25
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0.8 0.1 0.05
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.35 0.35 0.5
+      }
+    }
+  ]
+  name "test_obstacle"
+  boundingObject Box {
+    size 0.35 0.35 0.5
+  }
+  physics Physics {
+  }
+}
+
 DEF PATROL_ROBOT Robot {
   translation 0 0 0.08
   rotation 0 0 1 0
@@ -113,6 +172,15 @@ DEF PATROL_ROBOT Robot {
     }
     Compass {
       name "compass"
+    }
+    DistanceSensor {
+      name "front_distance_sensor"
+      translation 0.5 0 0.12
+      rotation 0 1 0 1.5708
+      lookupTable [
+        0 1000 0
+        2 0 0
+      ]
     }
     DEF WHEEL_SHAPE Shape {
       appearance PBRAppearance {
