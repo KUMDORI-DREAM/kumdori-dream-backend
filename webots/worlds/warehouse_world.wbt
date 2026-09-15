@@ -128,7 +128,7 @@ DEF WAYPOINT_4 Solid {
 }
 
 DEF TEST_OBSTACLE Solid {
-  translation 2.4 0 0.25
+  translation -2 0 0.25
   children [
     Shape {
       appearance PBRAppearance {
