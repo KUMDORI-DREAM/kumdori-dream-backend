@@ -46,7 +46,8 @@ MAX_MOTOR_SPEED = 6.0
 OBSTACLE_THRESHOLD = 50.0
 AVOIDANCE_TURN_S = 1.2
 AVOIDANCE_FORWARD_S = 0.8
-BOUNDARY_LIMIT = 3.0
+BOUNDARY_LIMIT = 2.4
+BOUNDARY_RETURN = 1.8
 
 robot = Robot()
 time_step = int(robot.getBasicTimeStep())
@@ -100,8 +101,12 @@ while robot.step(time_step) != -1:
         continue
 
     if now < avoidance_forward_until:
-        left = BASE_SPEED
-        right = BASE_SPEED
+        if abs(x) > BOUNDARY_LIMIT or abs(y) > BOUNDARY_LIMIT:
+            left = -BASE_SPEED
+            right = -BASE_SPEED
+        else:
+            left = BASE_SPEED
+            right = BASE_SPEED
         for motor in left_motors:
             motor.setVelocity(left)
         for motor in right_motors:
@@ -123,8 +128,8 @@ while robot.step(time_step) != -1:
     if abs(x) > BOUNDARY_LIMIT or abs(y) > BOUNDARY_LIMIT:
         # Keep the robot away from the physical warehouse walls even while
         # the route controller is turning toward its next waypoint.
-        target_x = max(-2.5, min(2.5, x))
-        target_y = max(-2.5, min(2.5, y))
+        target_x = BOUNDARY_RETURN if x > 0 else -BOUNDARY_RETURN
+        target_y = BOUNDARY_RETURN if y > 0 else -BOUNDARY_RETURN
     if math.hypot(target_x - x, target_y - y) < ARRIVAL_RADIUS:
         route_index = (route_index + 1) % len(route)
         continue
