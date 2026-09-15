@@ -41,9 +41,9 @@ ARRIVAL_RADIUS = 0.25
 BASE_SPEED = 4.0
 TURN_GAIN = 3.0
 MAX_MOTOR_SPEED = 6.0
-# The Webots sensor reports a high idle value in this world. With this
-# lookup table, a nearby obstacle produces a lower reading.
-OBSTACLE_THRESHOLD = 850.0
+# In this Webots world, the observed idle value is about 899.7. A nearby
+# obstacle lowers the reading slightly, so use the measured transition.
+OBSTACLE_THRESHOLD = 899.5
 AVOIDANCE_TURN_S = 1.2
 
 robot = Robot()
