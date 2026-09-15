@@ -41,9 +41,10 @@ ARRIVAL_RADIUS = 0.25
 BASE_SPEED = 4.0
 TURN_GAIN = 3.0
 MAX_MOTOR_SPEED = 6.0
-# In this Webots world, the observed idle value is about 899.7. A nearby
-# obstacle lowers the reading slightly, so use the measured transition.
-OBSTACLE_THRESHOLD = 899.5
+# The idle value can vary slightly after a world reload. Calibrate it at
+# startup and detect a relative drop instead of using an absolute value.
+SENSOR_CALIBRATION_S = 1.5
+OBSTACLE_DROP = 0.5
 AVOIDANCE_TURN_S = 1.2
 
 robot = Robot()
@@ -67,6 +68,7 @@ route_index = 0
 avoidance_until = 0.0
 avoidance_direction = 1.0
 last_debug_s = -1.0
+sensor_baseline = 0.0
 
 def wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
@@ -77,6 +79,8 @@ while robot.step(time_step) != -1:
     north = compass.getValues()
     heading = wrap(math.pi / 2 - math.atan2(north[1], north[0]))
     sensor_value = front_sensor.getValue()
+    if now <= SENSOR_CALIBRATION_S:
+        sensor_baseline = max(sensor_baseline, sensor_value)
     if now - last_debug_s >= 1.0:
         print(
             f"[DEBUG] loop tick t={now:.2f}, position=({x:.2f}, {y:.2f}), "
@@ -96,7 +100,7 @@ while robot.step(time_step) != -1:
         agent.send_heartbeat(now, x, y, "WAITING")
         continue
 
-    if sensor_value <= OBSTACLE_THRESHOLD:
+    if now > SENSOR_CALIBRATION_S and sensor_value < sensor_baseline - OBSTACLE_DROP:
         avoidance_direction *= -1.0
         avoidance_until = now + AVOIDANCE_TURN_S
         for motor in left_motors + right_motors:
