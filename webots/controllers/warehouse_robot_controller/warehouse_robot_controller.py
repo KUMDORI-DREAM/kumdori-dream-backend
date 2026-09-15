@@ -88,6 +88,17 @@ while robot.step(time_step) != -1:
             flush=True,
         )
         last_debug_s = now
+    if abs(x) > BOUNDARY_LIMIT or abs(y) > BOUNDARY_LIMIT:
+        # Boundary recovery must take priority over route steering and
+        # obstacle avoidance so a robot cannot keep pushing into a wall.
+        left = -BASE_SPEED
+        right = -BASE_SPEED
+        for motor in left_motors:
+            motor.setVelocity(left)
+        for motor in right_motors:
+            motor.setVelocity(right)
+        agent.send_heartbeat(now, x, y, "WAITING")
+        continue
     if now < avoidance_until:
         left = -MAX_MOTOR_SPEED * avoidance_direction
         right = MAX_MOTOR_SPEED * avoidance_direction
@@ -101,12 +112,8 @@ while robot.step(time_step) != -1:
         continue
 
     if now < avoidance_forward_until:
-        if abs(x) > BOUNDARY_LIMIT or abs(y) > BOUNDARY_LIMIT:
-            left = -BASE_SPEED
-            right = -BASE_SPEED
-        else:
-            left = BASE_SPEED
-            right = BASE_SPEED
+        left = BASE_SPEED
+        right = BASE_SPEED
         for motor in left_motors:
             motor.setVelocity(left)
         for motor in right_motors:
