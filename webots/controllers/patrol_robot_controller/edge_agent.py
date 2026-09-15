@@ -12,10 +12,10 @@ REQUEST_TIMEOUT_S = 0.5
 
 
 class EdgeAgent:
-    """Sends robot position/status heartbeats from the Webots controller to the backend.
+    """Webots 컨트롤러에서 백엔드로 로봇 위치와 상태 heartbeat를 전송한다.
 
-    Runs each request on a background thread so a slow or unreachable backend
-    never stalls the Webots simulation step.
+    백엔드 요청은 백그라운드 스레드에서 처리한다. 백엔드가 느리거나
+    연결되지 않아도 Webots 시뮬레이션 단계가 멈추지 않는다.
     """
 
     def __init__(

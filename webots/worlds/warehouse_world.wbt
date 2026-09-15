@@ -128,7 +128,7 @@ DEF WAYPOINT_4 Solid {
 }
 
 DEF TEST_OBSTACLE Solid {
-  translation 1 1 0.25
+  translation 2.4 0 0.25
   children [
     Shape {
       appearance PBRAppearance {
@@ -172,6 +172,7 @@ DEF PATROL_ROBOT Robot {
     DistanceSensor {
       name "front_distance_sensor"
       translation 0.5 0 0.12
+      aperture 0.8
       lookupTable [
         0 1000 0
         2 0 0
