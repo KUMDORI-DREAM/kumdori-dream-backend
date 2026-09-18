@@ -39,6 +39,16 @@ class RobotOut(BaseModel):
     target_node: str | None
 
 
+class RobotPositionEvent(BaseModel):
+    robot_id: str
+    x: float
+    y: float
+    status: str
+    battery: float | None = None
+    current_node: str | None = None
+    target_node: str | None = None
+
+
 class TelemetryOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
