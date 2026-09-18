@@ -22,6 +22,7 @@ class Robot(Base):
     __tablename__ = "robots"
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     status: Mapped[str] = mapped_column(
         String(32), nullable=False, default=RobotStatus.OFFLINE, server_default=RobotStatus.OFFLINE
     )

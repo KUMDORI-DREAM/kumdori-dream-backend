@@ -21,10 +21,16 @@ class HeartbeatIn(BaseModel):
         return value
 
 
+class RobotCreateIn(BaseModel):
+    id: str
+    name: str | None = None
+
+
 class RobotOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
+    name: str | None
     status: str
     battery: float | None
     last_seen: datetime | None

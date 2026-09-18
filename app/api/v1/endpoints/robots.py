@@ -6,9 +6,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.robot import Robot, RobotTelemetry, SafetyEvent
-from app.schemas.robot import HeartbeatIn, RobotOut, SafetyEventIn, SafetyEventOut
+from app.schemas.robot import HeartbeatIn, RobotCreateIn, RobotOut, SafetyEventIn, SafetyEventOut
 
 router = APIRouter(prefix="/robots", tags=["robots"])
+
+
+@router.post("", response_model=RobotOut, status_code=201)
+async def create_robot(payload: RobotCreateIn, db: AsyncSession = Depends(get_db)) -> Robot:
+    if await db.get(Robot, payload.id) is not None:
+        raise HTTPException(status_code=409, detail="robot already registered")
+
+    robot = Robot(id=payload.id, name=payload.name)
+    db.add(robot)
+    await db.commit()
+    await db.refresh(robot)
+    return robot
 
 
 @router.post("/{robot_id}/heartbeat", response_model=RobotOut)
