@@ -6,7 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.models.robot import Robot, RobotTelemetry, SafetyEvent
-from app.schemas.robot import HeartbeatIn, RobotCreateIn, RobotOut, SafetyEventIn, SafetyEventOut
+from app.schemas.robot import (
+    HeartbeatIn,
+    RobotCreateIn,
+    RobotOut,
+    RobotPositionEvent,
+    SafetyEventIn,
+    SafetyEventOut,
+)
+from app.ws.manager import robot_position_manager
 
 router = APIRouter(prefix="/robots", tags=["robots"])
 
@@ -52,6 +60,19 @@ async def send_heartbeat(
 
     await db.commit()
     await db.refresh(robot)
+
+    await robot_position_manager.broadcast(
+        RobotPositionEvent(
+            robot_id=robot.id,
+            x=payload.x,
+            y=payload.y,
+            status=robot.status,
+            battery=robot.battery,
+            current_node=robot.current_node,
+            target_node=robot.target_node,
+        ).model_dump()
+    )
+
     return robot
 
 
