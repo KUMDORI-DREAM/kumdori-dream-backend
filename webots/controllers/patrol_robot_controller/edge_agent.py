@@ -60,3 +60,34 @@ class EdgeAgent:
             urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_S)
         except (urllib.error.URLError, OSError) as exc:
             print(f"[edge-agent:{self.robot_id}] heartbeat failed: {exc}")
+
+    def send_safety_event(
+        self,
+        event_type: str,
+        x: float,
+        y: float,
+        description: str | None = None,
+        severity: str = "WARNING",
+    ) -> None:
+        payload = {
+            "event_type": event_type,
+            "severity": severity,
+            "description": description,
+            "x": x,
+            "y": y,
+        }
+        thread = threading.Thread(target=self._post_safety_event, args=(payload,), daemon=True)
+        thread.start()
+
+    def _post_safety_event(self, payload: dict) -> None:
+        url = f"{self.backend_url}/api/v1/robots/{self.robot_id}/safety-events"
+        request = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_S)
+        except (urllib.error.URLError, OSError) as exc:
+            print(f"[edge-agent:{self.robot_id}] safety event failed: {exc}")

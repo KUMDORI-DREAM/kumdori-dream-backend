@@ -4,6 +4,7 @@ import os
 
 from controller import Robot
 from edge_agent import EdgeAgent
+from vision_client import PersonPathDetector
 
 ROBOT_ID = os.environ.get("KUMDORI_ROBOT_ID", "warehouse-robot-01")
 WAREHOUSE_GRAPH = {
@@ -60,9 +61,12 @@ print(f"[DEBUG] controller initialized, timestep={time_step}", flush=True)
 gps = robot.getDevice("gps")
 compass = robot.getDevice("compass")
 front_sensor = robot.getDevice("front_distance_sensor")
+front_camera = robot.getDevice("front_camera")
 gps.enable(time_step)
 compass.enable(time_step)
 front_sensor.enable(time_step)
+front_camera.enable(time_step)
+detect_interval_s = float(os.environ.get("KUMDORI_DETECT_INTERVAL_S", "0.3"))
 left_motors = [robot.getDevice("front_left_motor"), robot.getDevice("rear_left_motor")]
 right_motors = [robot.getDevice("front_right_motor"), robot.getDevice("rear_right_motor")]
 for motor in left_motors + right_motors:
@@ -71,6 +75,11 @@ print("[DEBUG] devices initialized, entering simulation loop", flush=True)
 
 # 첫 번째 waypoint 구간이 시험 장애물을 통과하는 순환 경로를 주행한다.
 agent = EdgeAgent(ROBOT_ID)
+detector = PersonPathDetector(
+    on_person_in_path=lambda px, py: agent.send_safety_event(
+        "PERSON_IN_PATH", px, py, description="YOLO 사람 감지"
+    )
+)
 route = ["A1", "A2", "B2", "B1"]
 route_index = 0
 avoidance_until = 0.0
@@ -79,6 +88,7 @@ avoidance_forward_until = 0.0
 avoidance_direction = 1.0
 obstacle_started_at = None
 last_debug_s = -1.0
+last_detect_s = -detect_interval_s
 
 def wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
@@ -89,6 +99,11 @@ while robot.step(time_step) != -1:
     north = compass.getValues()
     heading = wrap(math.pi / 2 - math.atan2(north[1], north[0]))
     sensor_value = front_sensor.getValue()
+    if now - last_detect_s >= detect_interval_s:
+        last_detect_s = now
+        detector.submit_frame(
+            now, front_camera.getImage(), front_camera.getWidth(), front_camera.getHeight(), x, y
+        )
     target_node = route[route_index]
     target_x, target_y = NODE_COORDINATES[target_node]
     distance = math.hypot(target_x - x, target_y - y)

@@ -28,3 +28,10 @@ docs/
 *.key
 credentials.json
 
+# Webots 생성물 및 실행 임시 데이터
+.webots-tmp/
+webots/worlds/.*.wbproj
+webots/worlds/.*.jpg
+
+# 사전학습 YOLO 가중치 파일
+webots/models/
