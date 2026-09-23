@@ -31,6 +31,23 @@ class WarehouseNodeIn(BaseModel):
         return value
 
 
+class WarehouseNodePatch(BaseModel):
+    name: str | None = None
+    node_type: str | None = None
+    aisle: str | None = None
+    x: float | None = None
+    y: float | None = None
+
+    @field_validator("node_type")
+    @classmethod
+    def validate_node_type(cls, value: str | None) -> str | None:
+        from app.models.warehouse import WarehouseNodeType
+
+        if value is not None and value not in WarehouseNodeType.ALL:
+            raise ValueError(f"unsupported warehouse node type: {value}")
+        return value
+
+
 class WarehouseEdgeIn(BaseModel):
     from_node: str
     to_node: str
