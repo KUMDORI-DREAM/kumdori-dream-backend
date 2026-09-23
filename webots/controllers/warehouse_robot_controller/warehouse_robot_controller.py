@@ -1,19 +1,69 @@
 """그래프 노드 좌표를 따라 창고 경로를 주행하는 컨트롤러."""
+import json
 import math
 import os
+import urllib.error
+import urllib.request
 
 from controller import Robot
-from edge_agent import EdgeAgent
+from edge_agent import DEFAULT_BACKEND_URL, EdgeAgent
 from vision_client import PersonPathDetector
 
 ROBOT_ID = os.environ.get("KUMDORI_ROBOT_ID", "warehouse-robot-01")
-WAREHOUSE_GRAPH = {
+
+# 백엔드 연결이 안 될 때만 쓰는 최소 대체 그래프. 평소에는 백엔드의
+# WarehouseNode/Edge가 대시보드와 컨트롤러가 공유하는 단일 맵 소스다.
+FALLBACK_WAREHOUSE_GRAPH = {
     "A1": [("A2", 4.0), ("B1", 4.0)],
     "A2": [("A1", 4.0), ("B2", 4.0)],
     "B1": [("A1", 4.0), ("B2", 4.0)],
     "B2": [("A2", 4.0), ("B1", 4.0)],
 }
-NODE_COORDINATES = {"A1": (2.0, 2.0), "A2": (2.0, -2.0), "B1": (-2.0, 2.0), "B2": (-2.0, -2.0)}
+FALLBACK_NODE_COORDINATES = {
+    "A1": (2.0, 2.0),
+    "A2": (2.0, -2.0),
+    "B1": (-2.0, 2.0),
+    "B2": (-2.0, -2.0),
+}
+
+
+def fetch_warehouse_graph(backend_url: str = DEFAULT_BACKEND_URL, timeout_s: float = 3.0):
+    """백엔드의 WarehouseNode/Edge를 읽어 A* 그래프와 좌표 dict를 만든다.
+
+    백엔드가 아직 안 떠 있거나 응답이 없으면 컨트롤러 전체가 멈추지
+    않도록 하드코딩된 fallback 그래프로 내려간다.
+    """
+    try:
+        with urllib.request.urlopen(
+            f"{backend_url}/api/v1/warehouse/nodes", timeout=timeout_s
+        ) as resp:
+            nodes = json.loads(resp.read().decode("utf-8"))
+        with urllib.request.urlopen(
+            f"{backend_url}/api/v1/warehouse/edges", timeout=timeout_s
+        ) as resp:
+            edges = json.loads(resp.read().decode("utf-8"))
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        print(f"[warehouse-graph] backend fetch failed, using fallback graph: {exc}", flush=True)
+        return dict(FALLBACK_WAREHOUSE_GRAPH), dict(FALLBACK_NODE_COORDINATES)
+
+    if not nodes or not edges:
+        print("[warehouse-graph] backend graph is empty, using fallback graph", flush=True)
+        return dict(FALLBACK_WAREHOUSE_GRAPH), dict(FALLBACK_NODE_COORDINATES)
+
+    coordinates = {node["id"]: (node["x"], node["y"]) for node in nodes}
+    graph = {node_id: [] for node_id in coordinates}
+    for edge in edges:
+        if edge.get("blocked"):
+            continue
+        from_node, to_node, cost = edge["from_node"], edge["to_node"], edge["cost"]
+        if from_node not in graph or to_node not in graph:
+            continue
+        graph[from_node].append((to_node, cost))
+        graph[to_node].append((from_node, cost))
+    return graph, coordinates
+
+
+WAREHOUSE_GRAPH, NODE_COORDINATES = fetch_warehouse_graph()
 
 
 def a_star(start, goal, blocked_edges=()):
@@ -80,7 +130,8 @@ detector = PersonPathDetector(
         "PERSON_IN_PATH", px, py, description="YOLO 사람 감지"
     )
 )
-route = ["A1", "A2", "B2", "B1"]
+default_route = ["A1", "A2", "B2", "B1"]
+route = default_route if all(n in NODE_COORDINATES for n in default_route) else list(NODE_COORDINATES)
 route_index = 0
 avoidance_until = 0.0
 avoidance_reverse_until = 0.0

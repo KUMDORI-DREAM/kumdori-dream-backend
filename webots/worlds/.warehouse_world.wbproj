@@ -8,3 +8,4 @@ centralWidgetVisible: 1
 orthographicViewHeight: 1
 textFiles: 0 "../../../../../../Program Files/Webots/projects/robots/a4/portal/controllers/portal_pe/portal_pe.c"
 consoles: Console:All:All
+renderingDevicePerspectives: warehouse-robot-01:front_camera;1;1;0;0
